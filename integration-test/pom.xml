@@ -67,6 +67,10 @@
       <artifactId>junit</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.github.stephenc.jcip</groupId>
+      <artifactId>jcip-annotations</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.codehaus.groovy</groupId>
       <artifactId>groovy-json</artifactId>
     </dependency>
@@ -339,6 +343,7 @@
                   <preBuildHookScript>setup</preBuildHookScript>
                   <postBuildHookScript>verify</postBuildHookScript>
                   <settingsFile>target/it-${testMode}/settings.xml</settingsFile>
+                  <parallelThreads>3</parallelThreads>
                 </configuration>
               </execution>
             </executions>

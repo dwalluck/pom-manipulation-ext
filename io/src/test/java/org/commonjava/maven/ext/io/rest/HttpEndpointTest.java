@@ -15,6 +15,7 @@
  */
 package org.commonjava.maven.ext.io.rest;
 
+import net.jcip.annotations.NotThreadSafe;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.ref.SimpleProjectVersionRef;
 import org.jboss.byteman.contrib.bmunit.BMRule;
@@ -28,6 +29,7 @@ import java.util.List;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@NotThreadSafe
 @RunWith(BMUnitRunner.class)
 public class HttpEndpointTest extends HttpHeaderHeaderTest
 {

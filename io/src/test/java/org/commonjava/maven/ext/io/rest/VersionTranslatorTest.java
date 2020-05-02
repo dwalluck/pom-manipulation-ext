@@ -20,6 +20,7 @@ import ch.qos.logback.classic.Logger;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import kong.unirest.Unirest;
+import net.jcip.annotations.NotThreadSafe;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.ref.SimpleProjectVersionRef;
 import org.commonjava.maven.ext.io.rest.handler.AddSuffixJettyHandler;
@@ -55,6 +56,7 @@ import static org.junit.Assert.fail;
  * @author vdedik@redhat.com
  */
 @FixMethodOrder( MethodSorters.NAME_ASCENDING)
+@NotThreadSafe
 public class VersionTranslatorTest
 {
     private static List<ProjectVersionRef> aLotOfGavs;
@@ -83,7 +85,7 @@ public class VersionTranslatorTest
         LoggerFactory.getLogger( VersionTranslatorTest.class ).info( "Executing test " + testName.getMethodName() );
 
         this.versionTranslator = new DefaultTranslator( mockServer.getUrl(), 0, Translator.CHUNK_SPLIT_COUNT, "indyGroup",
-                                                        "", DEFAULT_CONNECTION_TIMEOUT_SEC, 
+                                                        "", DEFAULT_CONNECTION_TIMEOUT_SEC,
                                                         DEFAULT_SOCKET_TIMEOUT_SEC, RETRY_DURATION_SEC );
     }
 
@@ -126,7 +128,7 @@ public class VersionTranslatorTest
     public void testTranslateVersionsWithNulls() throws RestException
     {
         this.versionTranslator = new DefaultTranslator( mockServer.getUrl(), 0, Translator.CHUNK_SPLIT_COUNT, "NullBestMatchVersion",
-                                                        "", DEFAULT_CONNECTION_TIMEOUT_SEC, 
+                                                        "", DEFAULT_CONNECTION_TIMEOUT_SEC,
                                                         DEFAULT_SOCKET_TIMEOUT_SEC, RETRY_DURATION_SEC );
         List<ProjectVersionRef> gavs = Arrays.asList(
                         new SimpleProjectVersionRef( "com.example", "example", "1.0" ),

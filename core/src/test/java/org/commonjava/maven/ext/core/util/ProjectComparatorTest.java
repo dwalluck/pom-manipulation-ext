@@ -15,6 +15,7 @@
  */
 package org.commonjava.maven.ext.core.util;
 
+import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.execution.DefaultMavenExecutionRequest;
 import org.apache.maven.execution.DefaultMavenExecutionResult;
@@ -53,6 +54,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertFalse;
 
+@NotThreadSafe
 public class ProjectComparatorTest
 {
     private static final String RESOURCE_BASE = "properties/";

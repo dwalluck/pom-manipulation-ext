@@ -15,6 +15,7 @@
  */
 package org.commonjava.maven.ext.core.io;
 
+import net.jcip.annotations.NotThreadSafe;
 import org.apache.maven.repository.DefaultMirrorSelector;
 import org.commonjava.maven.atlas.ident.ref.SimpleProjectVersionRef;
 import org.commonjava.maven.ext.common.ManipulationException;
@@ -33,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 
+@NotThreadSafe
 @RunWith(BMUnitRunner.class)
 public class ModelResolverTest
 {

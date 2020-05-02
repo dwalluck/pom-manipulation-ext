@@ -15,6 +15,7 @@
  */
 package org.commonjava.maven.ext.io.rest;
 
+import net.jcip.annotations.NotThreadSafe;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.ref.SimpleProjectVersionRef;
 import org.commonjava.maven.ext.io.rest.rule.MockServer;
@@ -39,6 +40,7 @@ import static org.commonjava.maven.ext.io.rest.Translator.RETRY_DURATION_SEC;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@NotThreadSafe
 public class HttpHeaderHeaderTest
 {
     @Rule

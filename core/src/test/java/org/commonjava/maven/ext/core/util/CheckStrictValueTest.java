@@ -15,6 +15,7 @@
  */
 package org.commonjava.maven.ext.core.util;
 
+import net.jcip.annotations.NotThreadSafe;
 import org.commonjava.maven.ext.common.ManipulationException;
 import org.commonjava.maven.ext.core.ManipulationSession;
 import org.commonjava.maven.ext.core.state.CommonState;
@@ -32,6 +33,7 @@ import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 
+@NotThreadSafe
 @RunWith(Parameterized.class)
 public class CheckStrictValueTest
 {

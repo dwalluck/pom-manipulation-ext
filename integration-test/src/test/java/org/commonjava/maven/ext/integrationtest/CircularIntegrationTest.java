@@ -15,6 +15,7 @@
  */
 package org.commonjava.maven.ext.integrationtest;
 
+import net.jcip.annotations.NotThreadSafe;
 import org.commonjava.maven.ext.io.rest.handler.AddSuffixJettyHandler;
 import org.commonjava.maven.ext.io.rest.rule.MockServer;
 import org.junit.Before;
@@ -29,6 +30,7 @@ import static org.commonjava.maven.ext.integrationtest.ITestUtils.getDefaultTest
 import static org.commonjava.maven.ext.integrationtest.ITestUtils.runLikeInvoker;
 import static org.commonjava.maven.ext.integrationtest.ITestUtils.runMaven;
 
+@NotThreadSafe
 public class CircularIntegrationTest
 {
     private static AddSuffixJettyHandler handler = new AddSuffixJettyHandler( "/", null );

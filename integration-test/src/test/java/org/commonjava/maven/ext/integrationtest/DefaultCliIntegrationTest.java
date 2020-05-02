@@ -15,6 +15,7 @@
  */
 package org.commonjava.maven.ext.integrationtest;
 
+import net.jcip.annotations.NotThreadSafe;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,6 +34,7 @@ import static org.commonjava.maven.ext.integrationtest.ITestUtils.getDefaultTest
 import static org.commonjava.maven.ext.integrationtest.ITestUtils.runLikeInvoker;
 import static org.commonjava.maven.ext.integrationtest.ITestUtils.runMaven;
 
+@NotThreadSafe
 @SuppressWarnings( "ConstantConditions" )
 @RunWith( Parameterized.class )
 public class DefaultCliIntegrationTest

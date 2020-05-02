@@ -447,6 +447,12 @@
         <scope>test</scope>
       </dependency>
       <dependency>
+        <groupId>com.github.stephenc.jcip</groupId>
+        <artifactId>jcip-annotations</artifactId>
+        <version>1.0-1</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
         <groupId>org.hamcrest</groupId>
         <artifactId>hamcrest-all</artifactId>
         <version>1.3</version>
@@ -545,6 +551,8 @@
             <additionalClasspathElements>
               <additionalClasspathElement>${java.home}/../lib/tools.jar</additionalClasspathElement>
             </additionalClasspathElements>
+            <parallel>classes</parallel>
+            <useUnlimitedThreads>true</useUnlimitedThreads>
           </configuration>
         </plugin>
         <plugin>

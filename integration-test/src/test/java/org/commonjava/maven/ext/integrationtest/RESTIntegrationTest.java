@@ -15,6 +15,7 @@
  */
 package org.commonjava.maven.ext.integrationtest;
 
+import net.jcip.annotations.NotThreadSafe;
 import org.commonjava.maven.ext.common.ManipulationException;
 import org.commonjava.maven.ext.io.rest.handler.AddSuffixJettyHandler;
 import org.commonjava.maven.ext.io.rest.rule.MockServer;
@@ -33,6 +34,7 @@ import static org.commonjava.maven.ext.integrationtest.ITestUtils.getDefaultTest
 import static org.commonjava.maven.ext.integrationtest.ITestUtils.runLikeInvoker;
 import static org.commonjava.maven.ext.integrationtest.ITestUtils.runMaven;
 
+@NotThreadSafe
 public class RESTIntegrationTest
 {
     private static final Logger LOGGER = LoggerFactory.getLogger( DefaultCliIntegrationTest.class );

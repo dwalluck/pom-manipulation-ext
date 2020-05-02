@@ -15,6 +15,7 @@
  */
 package org.commonjava.maven.ext.core.util;
 
+import net.jcip.annotations.NotThreadSafe;
 import org.apache.maven.execution.DefaultMavenExecutionRequest;
 import org.apache.maven.execution.DefaultMavenExecutionResult;
 import org.apache.maven.execution.MavenExecutionRequest;
@@ -65,6 +66,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@NotThreadSafe
 public class PropertiesUtilsTest
 {
     private static final String RESOURCE_BASE = "properties/";

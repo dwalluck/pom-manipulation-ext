@@ -16,6 +16,7 @@
 package org.commonjava.maven.ext.io.rest;
 
 import kong.unirest.Unirest;
+import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.lang.reflect.FieldUtils;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.ext.io.rest.handler.SpyFailJettyHandler;
@@ -46,6 +47,8 @@ import static org.junit.Assert.fail;
 /**
  * @author Jakub Senko <jsenko@redhat.com>
  */
+@NotThreadSafe
+// TODO: remove
 public class HandleServiceUnavailableTest
 {
     private static List<ProjectVersionRef> aLotOfGavs;

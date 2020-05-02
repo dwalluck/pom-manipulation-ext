@@ -15,6 +15,7 @@
  */
 package org.commonjava.maven.ext.cli;
 
+import net.jcip.annotations.NotThreadSafe;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.reflect.FieldUtils;
 import org.apache.maven.execution.MavenSession;
@@ -38,6 +39,7 @@ import static org.commonjava.maven.ext.core.fixture.TestUtils.INTEGRATION_TEST;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+@NotThreadSafe
 public class CliTest
 {
     @Rule

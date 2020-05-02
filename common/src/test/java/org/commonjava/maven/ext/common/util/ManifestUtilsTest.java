@@ -15,6 +15,7 @@
  */
 package org.commonjava.maven.ext.common.util;
 
+import net.jcip.annotations.NotThreadSafe;
 import org.commonjava.maven.ext.common.ManipulationException;
 import org.junit.Rule;
 import org.junit.Test;
@@ -23,6 +24,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@NotThreadSafe
 public class ManifestUtilsTest
 {
     @Rule

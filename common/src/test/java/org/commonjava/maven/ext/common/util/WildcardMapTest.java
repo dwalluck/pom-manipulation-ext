@@ -15,6 +15,7 @@
  */
 package org.commonjava.maven.ext.common.util;
 
+import net.jcip.annotations.NotThreadSafe;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
@@ -29,6 +30,7 @@ import org.junit.Test;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 import org.slf4j.LoggerFactory;
 
+@NotThreadSafe
 public class WildcardMapTest
 {
     private WildcardMap<String> map;

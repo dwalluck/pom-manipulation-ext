@@ -15,6 +15,7 @@
  */
 package org.commonjava.maven.ext.core;
 
+import net.jcip.annotations.NotThreadSafe;
 import org.commonjava.maven.ext.core.fixture.PlexusTestRunner;
 import org.commonjava.maven.ext.core.impl.Manipulator;
 import org.junit.Rule;
@@ -29,8 +30,9 @@ import java.util.Map;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-@RunWith( PlexusTestRunner.class )
 @Named
+@NotThreadSafe
+@RunWith( PlexusTestRunner.class )
 public class ManipulationManagerTest
 {
     @Rule
