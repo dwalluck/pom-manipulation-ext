@@ -515,6 +515,7 @@
             <mavenExecutorId>forked-path</mavenExecutorId>
             <useReleaseProfile>false</useReleaseProfile>
             <arguments>-Prelease,run-its</arguments>
+            <preparationGoals>clean compile</preparationGoals>
           </configuration>
         </plugin>
         <plugin>
