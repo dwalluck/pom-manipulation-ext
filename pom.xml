@@ -22,7 +22,7 @@
   <parent>
     <groupId>com.redhat.rcm</groupId>
     <artifactId>redhat-releng-tools</artifactId>
-    <version>9</version>
+    <version>10-SNAPSHOT</version>
   </parent>
 
   <groupId>org.commonjava.maven.ext</groupId>
@@ -654,72 +654,7 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>attach-javadocs</id>
-            <configuration>
-              <sourcepath>${project.build.directory}/javadoc-generated-sources</sourcepath>
-              <doclet>org.commonjava.maven.ext.annotation.JavadocFilter</doclet>
-              <docletArtifact>
-                <groupId>org.commonjava.maven.ext</groupId>
-                <artifactId>pom-manipulation-annotation</artifactId>
-                <version>${project.version}</version>
-              </docletArtifact>
-              <detectJavaApiLink>true</detectJavaApiLink>
-              <quiet>true</quiet>
-              <author>false</author>
-              <links>
-                <link>https://www.javadoc.io/doc/org.commonjava.maven.ext/pom-manipulation-common/${project.version}</link>
-                <link>https://www.javadoc.io/doc/org.commonjava.maven.ext/pom-manipulation-io/${project.version}</link>
-                <link>https://www.javadoc.io/doc/org.commonjava.maven.ext/pom-manipulation-core/${project.version}</link>
-                <link>https://www.javadoc.io/doc/org.commonjava.maven.ext/pom-manipulation-cli/${project.version}</link>
-                <link>https://www.javadoc.io/doc/org.commonjava.maven.ext/pom-manipulation-ext/${project.version}</link>
-                <link>https://www.javadoc.io/doc/org.commonjava.maven.ext/pom-manipulation-integration-test/${project.version}</link>
-
-                <link>https://javadoc.io/doc/org.commonjava.maven.atlas/atlas-identities/${atlasVersion}</link>
-                <link>https://javadoc.io/doc/org.commonjava.maven.galley/galley-api/${galleyVersion}</link>
-                <link>https://javadoc.io/doc/org.commonjava.maven.galley/galley-maven/${galleyVersion}</link>
-
-                <link>https://maven.apache.org/ref/${mavenVersion}/maven-model/apidocs</link>
-                <link>https://maven.apache.org/ref/${mavenVersion}/maven-core/apidocs</link>
-                <link>https://maven.apache.org/ref/${mavenVersion}/maven-compat/apidocs</link>
-
-                <link>https://www.javadoc.io/doc/org.slf4j/slf4j-api/${slf4jVersion}</link>
-                <link>https://www.javadoc.io/doc/com.jayway.jsonpath/json-path/${jsonPathVersion}</link>
-                <link>https://www.javadoc.io/doc/org.codehause.groovy/groovy-all/${groovyVersion}</link>
-                <link>https://fasterxml.github.io/jackson-core/javadoc/${jacksonJavadocVersion}</link>
-              </links>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>animal-sniffer-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>check-java-api</id>
-            <!-- It needs to run after class compilation. No need to include test classes -->
-            <!-- as it does not support it: https://github.com/mojohaus/animal-sniffer/issues/5 -->
-            <phase>process-classes</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-            <configuration>
-              <ignoreDependencies>true</ignoreDependencies>
-              <signature>
-                <groupId>org.codehaus.mojo.signature</groupId>
-                <artifactId>java18</artifactId>
-                <version>1.0</version>
-              </signature>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.jacoco</groupId>
@@ -768,4 +703,216 @@
     <module>integration-test</module>
     <module>coverage-reporting</module>
   </modules>
+
+  <profiles>
+    <profile>
+      <id>jdk8</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+        <jdk>1.8</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <excludes>
+                <exclude>**/JavadocFilterJava9.java</exclude>
+                <exclude>**/RootDocProcessorJava9.java</exclude>
+              </excludes>
+              <showDeprecation>true</showDeprecation>
+              <source>1.8</source>
+              <target>1.8</target>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <source>1.8</source>
+              <sourceFileExcludes>
+                <sourceFileExclude>**/JavadocFilterJava9.java</sourceFileExclude>
+                <sourceFileExclude>**/RootDocProcessorJava9.java</sourceFileExclude>
+              </sourceFileExcludes>
+            </configuration>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <configuration>
+                  <sourcepath>${project.build.directory}/javadoc-generated-sources</sourcepath>
+                  <doclet>org.commonjava.maven.ext.annotation.JavadocFilter</doclet>
+                  <docletArtifact>
+                    <groupId>org.commonjava.maven.ext</groupId>
+                    <artifactId>pom-manipulation-annotation</artifactId>
+                    <version>${project.version}</version>
+                  </docletArtifact>
+                  <detectJavaApiLink>true</detectJavaApiLink>
+                  <quiet>true</quiet>
+                  <author>false</author>
+                  <links>
+                    <link>https://www.javadoc.io/doc/org.commonjava.maven.ext/pom-manipulation-common/${project.version}</link>
+                    <link>https://www.javadoc.io/doc/org.commonjava.maven.ext/pom-manipulation-io/${project.version}</link>
+                    <link>https://www.javadoc.io/doc/org.commonjava.maven.ext/pom-manipulation-core/${project.version}</link>
+                    <link>https://www.javadoc.io/doc/org.commonjava.maven.ext/pom-manipulation-cli/${project.version}</link>
+                    <link>https://www.javadoc.io/doc/org.commonjava.maven.ext/pom-manipulation-ext/${project.version}</link>
+                    <link>https://www.javadoc.io/doc/org.commonjava.maven.ext/pom-manipulation-integration-test/${project.version}</link>
+
+                    <link>https://javadoc.io/doc/org.commonjava.maven.atlas/atlas-identities/${atlasVersion}</link>
+                    <link>https://javadoc.io/doc/org.commonjava.maven.galley/galley-api/${galleyVersion}</link>
+                    <link>https://javadoc.io/doc/org.commonjava.maven.galley/galley-maven/${galleyVersion}</link>
+
+                    <link>https://maven.apache.org/ref/${mavenVersion}/maven-model/apidocs</link>
+                    <link>https://maven.apache.org/ref/${mavenVersion}/maven-core/apidocs</link>
+                    <link>https://maven.apache.org/ref/${mavenVersion}/maven-compat/apidocs</link>
+
+                    <link>https://www.javadoc.io/doc/org.slf4j/slf4j-api/${slf4jVersion}</link>
+                    <link>https://www.javadoc.io/doc/com.jayway.jsonpath/json-path/${jsonPathVersion}</link>
+                    <link>https://www.javadoc.io/doc/org.codehause.groovy/groovy-all/${groovyVersion}</link>
+                    <link>https://fasterxml.github.io/jackson-core/javadoc/${jacksonJavadocVersion}</link>
+                  </links>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>animal-sniffer-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>check-java-api</id>
+                <!-- It needs to run after class compilation. No need to include test classes -->
+                <!-- as it does not support it: https://github.com/mojohaus/animal-sniffer/issues/5 -->
+                <phase>process-classes</phase>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+                <configuration>
+                  <ignoreDependencies>true</ignoreDependencies>
+                  <signature>
+                    <groupId>org.codehaus.mojo.signature</groupId>
+                    <artifactId>java18</artifactId>
+                    <version>1.0</version>
+                  </signature>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+          <plugin>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok-maven-plugin</artifactId>
+            <configuration>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+      <reporting>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <source>1.8</source>
+              <sourceFileExcludes>
+                <sourceFileExclude>**/JavadocFilterJava9.java</sourceFileExclude>
+                <sourceFileExclude>**/RootDocProcessorJava9.java</sourceFileExclude>
+              </sourceFileExcludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </reporting>
+    </profile>
+    <profile>
+      <id>jdk9</id>
+      <activation>
+        <activeByDefault>false</activeByDefault>
+        <jdk>[9,)</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <excludes>
+                <exclude>**/JavadocFilter.java</exclude>
+                <exclude>**/RootDocProcessor.java</exclude>
+              </excludes>
+              <release>11</release>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <additionalOptions>
+                <additionalOption>-html5</additionalOption>
+              </additionalOptions>
+              <release>11</release>
+              <sourceFileExcludes>
+                <sourceFileExclude>**/JavadocFilter.java</sourceFileExclude>
+                <sourceFileExclude>**/RootDocProcessor.java</sourceFileExclude>
+              </sourceFileExcludes>
+            </configuration>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <configuration>
+                  <sourcepath>${project.build.directory}/javadoc-generated-sources</sourcepath>
+                  <doclet>org.commonjava.maven.ext.annotation.JavadocFilterJava9</doclet>
+                  <docletArtifact>
+                    <groupId>org.commonjava.maven.ext</groupId>
+                    <artifactId>pom-manipulation-annotation</artifactId>
+                    <version>${project.version}</version>
+                  </docletArtifact>
+                  <detectJavaApiLink>true</detectJavaApiLink>
+                  <quiet>true</quiet>
+                  <author>false</author>
+                  <links>
+                    <link>https://www.javadoc.io/doc/org.commonjava.maven.ext/pom-manipulation-common/${project.version}</link>
+                    <link>https://www.javadoc.io/doc/org.commonjava.maven.ext/pom-manipulation-io/${project.version}</link>
+                    <link>https://www.javadoc.io/doc/org.commonjava.maven.ext/pom-manipulation-core/${project.version}</link>
+                    <link>https://www.javadoc.io/doc/org.commonjava.maven.ext/pom-manipulation-cli/${project.version}</link>
+                    <link>https://www.javadoc.io/doc/org.commonjava.maven.ext/pom-manipulation-ext/${project.version}</link>
+                    <link>https://www.javadoc.io/doc/org.commonjava.maven.ext/pom-manipulation-integration-test/${project.version}</link>
+
+                    <link>https://javadoc.io/doc/org.commonjava.maven.atlas/atlas-identities/${atlasVersion}</link>
+                    <link>https://javadoc.io/doc/org.commonjava.maven.galley/galley-api/${galleyVersion}</link>
+                    <link>https://javadoc.io/doc/org.commonjava.maven.galley/galley-maven/${galleyVersion}</link>
+
+                    <link>https://maven.apache.org/ref/${mavenVersion}/maven-model/apidocs</link>
+                    <link>https://maven.apache.org/ref/${mavenVersion}/maven-core/apidocs</link>
+                    <link>https://maven.apache.org/ref/${mavenVersion}/maven-compat/apidocs</link>
+
+                    <link>https://www.javadoc.io/doc/org.slf4j/slf4j-api/${slf4jVersion}</link>
+                    <link>https://www.javadoc.io/doc/com.jayway.jsonpath/json-path/${jsonPathVersion}</link>
+                    <link>https://www.javadoc.io/doc/org.codehause.groovy/groovy-all/${groovyVersion}</link>
+                    <link>https://fasterxml.github.io/jackson-core/javadoc/${jacksonJavadocVersion}</link>
+                  </links>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+      <reporting>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <additionalOptions>
+                <additionalOption>-html5</additionalOption>
+              </additionalOptions>
+              <release>11</release>
+              <sourceFileExcludes>
+                <sourceFileExclude>**/JavadocFilter.java</sourceFileExclude>
+                <sourceFileExclude>**/RootDocProcessor.java</sourceFileExclude>
+              </sourceFileExcludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </reporting>
+    </profile>
+  </profiles>
 </project>
