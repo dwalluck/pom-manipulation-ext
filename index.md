@@ -136,6 +136,12 @@ This is available [here](https://www.javadoc.io/doc/org.commonjava.maven.ext)
 
 ### Feature Guide
 
+#### Operation
+
+  1. Models files are read before all manipulators (which includes the groovy ones).
+  2. In-memory model is written after all are finished.
+  3. Groovy manipulator can still modify non-model files on disk.
+
 Below are links to more specific information about configuring sets of features in PME:
 
 * [Configuration Files](guide/configuration.html)
