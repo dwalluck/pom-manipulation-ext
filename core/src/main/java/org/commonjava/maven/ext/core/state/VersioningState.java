@@ -43,25 +43,28 @@ public class VersioningState
     implements State
 {
     @ConfigValue( docIndex = "project-version-manip.html#manual-version-suffix" )
-    public static final String VERSION_SUFFIX_SYSPROP= "versionSuffix";
+    public static final String VERSION_SUFFIX_SYSPROP = "versionSuffix";
 
     @ConfigValue( docIndex = "project-version-manip.html#automatic-version-increment")
-    public static final String INCREMENT_SERIAL_SUFFIX_SYSPROP= "versionIncrementalSuffix";
+    public static final String INCREMENT_SERIAL_SUFFIX_SYSPROP = "versionIncrementalSuffix";
 
     @ConfigValue( docIndex = "project-version-manip.html#version-increment-padding")
-    public static final String INCREMENT_SERIAL_SUFFIX_PADDING_SYSPROP= "versionIncrementalSuffixPadding";
+    public static final String INCREMENT_SERIAL_SUFFIX_PADDING_SYSPROP = "versionIncrementalSuffixPadding";
 
     @ConfigValue( docIndex = "project-version-manip.html#snapshot-detection")
-    public static final String VERSION_SUFFIX_SNAPSHOT_SYSPROP= "versionSuffixSnapshot";
+    public static final String VERSION_SUFFIX_SNAPSHOT_SYSPROP = "versionSuffixSnapshot";
 
     @ConfigValue( docIndex = "project-version-manip.html#osgi-compliance")
-    public static final String VERSION_OSGI_SYSPROP= "versionOsgi";
+    public static final String VERSION_OSGI_SYSPROP = "versionOsgi";
 
     @ConfigValue( docIndex = "project-version-manip.html#version-override")
-    public static final String VERSION_OVERRIDE_SYSPROP= "versionOverride";
+    public static final String VERSION_OVERRIDE_SYSPROP = "versionOverride";
 
     @ConfigValue( docIndex = "project-version-manip.html#alternate-suffix-handling")
     public static final String VERSION_SUFFIX_ALT = "versionSuffixAlternatives";
+
+    @ConfigValue( docIndex = "project-version-manip.html#fill")
+    public static final String VERSION_FILL_SYSPROP = "versionFill";
 
     /**
      * @return the version suffix to be appended to the project version.
@@ -100,6 +103,11 @@ public class VersioningState
     private List<String> allSuffixes;
 
     /**
+     * @return true if we should fill any missing minor and micro version with zero (implies OSGi compliance)
+     */
+    private boolean fill;
+
+    /**
      * Record the versions to change. Essentially this contains a mapping of original
      * project GAV to new version to change.
      *
@@ -117,6 +125,7 @@ public class VersioningState
         initialise( userProps );
     }
 
+    @Override
     public void initialise( Properties userProps )
     {
         suffix = userProps.getProperty( VERSION_SUFFIX_SYSPROP );
@@ -125,6 +134,12 @@ public class VersioningState
         preserveSnapshot = Boolean.parseBoolean( userProps.getProperty( VERSION_SUFFIX_SNAPSHOT_SYSPROP ) );
         osgi = Boolean.parseBoolean( userProps.getProperty( VERSION_OSGI_SYSPROP, "true" ) );
         override = userProps.getProperty( VERSION_OVERRIDE_SYSPROP );
+        fill = Boolean.parseBoolean( userProps.getProperty( VERSION_FILL_SYSPROP ) );
+
+        if ( fill && !osgi )
+        {
+            osgi = true;
+        }
 
         // Provide an alternative list of versionSuffixes split via a comma separator. Defaults to 'redhat' IF the current rebuild suffix is not that.
         suffixAlternatives = Arrays.asList(
@@ -140,8 +155,6 @@ public class VersioningState
             allSuffixes.addAll( getSuffixAlternatives() );
         }
     }
-
-
 
     /**
      * Enabled ONLY if either versionIncrementalSuffix or versionSuffix is provided in the user properties / CLI -D options.
@@ -178,18 +191,18 @@ public class VersioningState
 
     public String getRebuildSuffix()
     {
-        String suffix = "";
+        String rebuildSuffix = "";
 
         // Same precedence as VersionCalculator::calculate
         if ( ! isEmpty ( getSuffix() ) )
         {
             int dashIndex = getSuffix().lastIndexOf( '-' );
-            suffix = getSuffix().substring( 0, dashIndex > 0 ? dashIndex : getSuffix().length() );
+            rebuildSuffix = getSuffix().substring( 0, dashIndex > 0 ? dashIndex : getSuffix().length() );
         }
         else if ( ! isEmpty ( getIncrementalSerialSuffix() ) )
         {
-            suffix = getIncrementalSerialSuffix();
+            rebuildSuffix = getIncrementalSerialSuffix();
         }
-        return suffix;
+        return rebuildSuffix;
     }
 }

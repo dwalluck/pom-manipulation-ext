@@ -18,16 +18,19 @@ package org.commonjava.maven.ext.core.impl;
 import org.commonjava.maven.ext.core.state.VersioningState;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Properties;
-import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-
 
 public class VersionTest
 {
@@ -47,7 +50,8 @@ public class VersionTest
         assertThat( Version.appendQualifierSuffix( "1.2-SNAPSHOT", "jboss1" ), equalTo( "1.2.jboss1-SNAPSHOT") );
         assertThat( Version.appendQualifierSuffix( "1.2-jboss-1", "jboss-2" ), equalTo( "1.2-jboss-2") );
         assertThat( Version.appendQualifierSuffix( "1.2-jboss-1", ".jboss-2" ), equalTo( "1.2.jboss-2") );
-        assertThat( Version.appendQualifierSuffix( "1.1-SNAPSHOT", ".test_jdk7-SNAPSHOT" ), equalTo( "1.1.test_jdk7-SNAPSHOT") );
+        assertThat( Version.appendQualifierSuffix( "1.1-SNAPSHOT", ".test_jdk7-SNAPSHOT" ),
+                equalTo( "1.1.test_jdk7-SNAPSHOT") );
         assertThat( Version.appendQualifierSuffix( "1.1.beta-2", "-beta-1" ), equalTo( "1.1-beta-1") );
         assertThat( Version.appendQualifierSuffix( "1.1.beta-2", "-foo-1" ), equalTo( "1.1.beta-2-foo-1") );
     }
@@ -55,100 +59,101 @@ public class VersionTest
     @Test
     public void testAppendQualifierSuffix_WithProperty()
     {
-        assertThat( Version.appendQualifierSuffix( Version.PROJECT_VERSION, "foo" ), equalTo( "${project.version}-foo") );
+        assertThat( Version.appendQualifierSuffix( Version.PROJECT_VERSION, "foo" ),
+                equalTo( "${project.version}-foo") );
         assertThat( Version.appendQualifierSuffix( "1.0.${micro}", ".foo" ), equalTo( "1.0.${micro}.foo") );
         assertThat( Version.setBuildNumber( Version.PROJECT_VERSION, "10" ), equalTo( "${project.version}-10") );
         assertThat( Version.setBuildNumber( "${project.version}-foo", "10" ), equalTo( "${project.version}-foo-10") );
     }
 
     @Test
-    public void testAppendQualifierSuffix_MulitpleTimes()
+    public void testAppendQualifierSuffix_MultipleTimes()
     {
-
         String version = "1.2.0";
         version = Version.appendQualifierSuffix( version, "jboss-1" );
         version = Version.appendQualifierSuffix( version, "foo" );
         assertThat( version, equalTo( "1.2.0.jboss-1-foo" ) );
 
-        version = "1.2";
-        version = Version.appendQualifierSuffix( version, "jboss-1" );
-        version = Version.appendQualifierSuffix( version, "jboss-2" );
-        version = Version.getOsgiVersion( version );
-        assertThat( version, equalTo( "1.2.0.jboss-2" ) );
+        String version2 = "1.2";
+        version2 = Version.appendQualifierSuffix(version2, "jboss-1" );
+        version2 = Version.appendQualifierSuffix(version2, "jboss-2" );
+        version2 = Version.getOsgiVersion(version2);
+        assertThat( version2, equalTo( "1.2.0.jboss-2" ) );
     }
 
     @Test
     public void testFindHighestMatchingBuildNumber() {
-        String version = "1.2.0.Final-foo";
-        final Set<String> versionSet = new HashSet<>();
-        versionSet.add("1.2.0.Final-foo-1");
-        versionSet.add("1.2.0.Final-foo-2");
-        assertThat(Version.findHighestMatchingBuildNumber(version, versionSet), equalTo(2));
+        final String version = "1.2.0.Final-foo";
+        final Collection<String> versions = new HashSet<>( 5 );
+        versions.add("1.2.0.Final-foo-1");
+        versions.add("1.2.0.Final-foo-2");
+        assertThat( Version.findHighestMatchingBuildNumber( version, versions ), equalTo( 2 ) );
 
-        version = "1.2.0.Final-foo10";
-        versionSet.clear();
-        versionSet.add("1.2.0.Final-foo-1");
-        versionSet.add("1.2.0.Final-foo-2");
-        assertThat(Version.findHighestMatchingBuildNumber(version, versionSet), equalTo(2));
+        final String version2 = "1.2.0.Final-foo10";
+        versions.clear();
+        versions.add("1.2.0.Final-foo-1");
+        versions.add("1.2.0.Final-foo-2");
+        assertThat( Version.findHighestMatchingBuildNumber( version2, versions ), equalTo( 2 ) );
 
-        version = Version.appendQualifierSuffix( "0.0.4", "redhat-0" );
-        versionSet.clear();
-        versionSet.add( "0.0.1" );
-        versionSet.add( "0.0.2" );
-        versionSet.add( "0.0.3" );
-        versionSet.add( "0.0.4" );
-        versionSet.add( "0.0.4.redhat-2" );
-        assertThat( Version.findHighestMatchingBuildNumber( version, versionSet ), equalTo( 2 ) );
+        final String version3 = Version.appendQualifierSuffix("0.0.4", "redhat-0");
+        versions.clear();
+        versions.add( "0.0.1" );
+        versions.add( "0.0.2" );
+        versions.add( "0.0.3" );
+        versions.add( "0.0.4" );
+        versions.add( "0.0.4.redhat-2" );
+        assertThat( Version.findHighestMatchingBuildNumber(version3, versions ), equalTo( 2 ) );
 
-        version = "1.2-foo-1";
-        versionSet.clear();
-        versionSet.add( "1.2-foo-4" );
-        assertThat( Version.findHighestMatchingBuildNumber( version, versionSet ), equalTo( 4 ) );
+        final String version4 = "1.2-foo-1";
+        versions.clear();
+        versions.add( "1.2-foo-4" );
+        assertThat( Version.findHighestMatchingBuildNumber(version4, versions ), equalTo( 4 ) );
 
-        version = "1.2";
-        versionSet.clear();
-        versionSet.add( "1.2" );
-        assertThat( Version.findHighestMatchingBuildNumber( version, versionSet ), equalTo( 0 ) );
+        final String version5 = "1.2";
+        versions.clear();
+        versions.add( "1.2" );
+        assertThat( Version.findHighestMatchingBuildNumber(version5, versions ), equalTo( 0 ) );
     }
 
     @Test
     public void testFindHighestMatchingBuildNumber_OSGi()
     {
-        String version = "1.2.0.Final-foo";
-        final Set<String> versionSet = new HashSet<>();
-        versionSet.add( "1.2.0.Final-foo-10" );
-        versionSet.add( "1.2.0.Final-foo-2" );
-        assertThat( Version.findHighestMatchingBuildNumber( version, versionSet ), equalTo( 10 ) );
-        versionSet.clear();
+        final String version = "1.2.0.Final-foo";
+        final Iterable<String> versions = Arrays.asList( "1.2.0.Final-foo-10", "1.2.0.Final-foo-2" );
+        assertThat( Version.findHighestMatchingBuildNumber( version, versions ), equalTo( 10 ) );
     }
 
     @Test
     public void testFindHighestMatchingBuildNumber_Fuse()
     {
-        String version = "2.10.0-000164.fuse-000001-redhat";
-        final Set<String> versionSet = new HashSet<>();
-        versionSet.add( "2.10.0.redhat-000022" );
-        versionSet.add( "2.10.0.000164-fuse-000001-redhat-2" );
-        versionSet.add( "2.10.0.fuse-000022-redhat-2" );
-        versionSet.add( "2.10.0.fuse-000022-redhat-1" );
-        assertThat( Version.findHighestMatchingBuildNumber( version, versionSet ), equalTo( 2 ) );
-        versionSet.clear();
+        final String version = "2.10.0-000164.fuse-000001-redhat";
+        final Iterable<String> versions = Arrays.asList( "2.10.0.redhat-000022", "2.10.0.000164-fuse-000001-redhat-2",
+                "2.10.0.fuse-000022-redhat-2", "2.10.0.fuse-000022-redhat-1" );
+        assertThat( Version.findHighestMatchingBuildNumber( version, versions ), equalTo( 2 ) );
     }
 
     @Test
     public void testFindHighestMatchingBuildNumber_ZeroFill()
     {
-        String majorOnlyVersion = "7";
-        String version = Version.appendQualifierSuffix( majorOnlyVersion, "redhat" );
-        final Set<String> versionSet = new HashSet<>();
-        versionSet.add( "7.0.0.redhat-2" );
-        assertThat( Version.findHighestMatchingBuildNumber( version, versionSet ), equalTo( 2 ) );
+        final String majorOnlyVersion = "7";
+        final String version = Version.appendQualifierSuffix( majorOnlyVersion, "redhat" );
+        final Collection<String> versions = new HashSet<>( 1 );
+        versions.add( "7.0.0.redhat-2" );
+        assertThat( Version.findHighestMatchingBuildNumber( version, versions ), equalTo( 2 ) );
 
-        String majorMinorVersion = "7.1";
-        version = Version.appendQualifierSuffix( majorMinorVersion, "redhat" );
-        versionSet.clear();
-        versionSet.add( "7.1.0.redhat-4" );
-        assertThat( Version.findHighestMatchingBuildNumber( version, versionSet ), equalTo( 4 ) );
+        final String majorMinorVersion = "7.1";
+        final String version2 = Version.appendQualifierSuffix(majorMinorVersion, "redhat");
+        versions.clear();
+        versions.add( "7.1.0.redhat-4" );
+        assertThat( Version.findHighestMatchingBuildNumber(version2, versions ), equalTo( 4 ) );
+    }
+
+    @Test
+    public void testFindHighestMatchingBuildNumberNCLSUP132()
+    {
+        final Iterable<String> versions = Arrays.asList( "13.0.1.redhat-2", "13.0.1-redhat-1", "16.0.1.redhat-3",
+                "18.0.0.redhat-1", "19.0.0.redhat-1", "11.0.2-redhat-2", "11.0.2-redhat-1" );
+        assertThat( Version.findHighestMatchingBuildNumber( "13.0-1", versions ), equalTo( 0 ) );
     }
 
     @Test
@@ -198,11 +203,31 @@ public class VersionTest
         assertThat( Version.getOsgiVersion( "12.4-beta" ), equalTo( "12.4.0.beta" ) );
         assertThat( Version.getOsgiVersion( "-beta1" ), equalTo( "-beta1" ) );
         assertThat( Version.getOsgiVersion( "12.beta1_3-5.hello" ), equalTo( "12.0.0.beta1_3-5-hello" ) );
-        assertThat( Version.getOsgiVersion( "1.0.0.Final-t20170516223844555-redhat-1" ), equalTo( "1.0.0.Final-t20170516223844555-redhat-1" ) );
+        assertThat( Version.getOsgiVersion( "1.0.0.Final-t20170516223844555-redhat-1" ),
+                equalTo( "1.0.0.Final-t20170516223844555-redhat-1" ) );
         assertThat ( Version.getOsgiVersion( "1-0-3.4-beta2.1" ), equalTo( "1.0.3.4-beta2-1" ));
         assertThat ( Version.getOsgiVersion( "4.8-2" ), equalTo( "4.8.2" ));
         assertThat ( Version.getOsgiVersion( "4.5.1-1" ), equalTo( "4.5.1.1" ));
         assertThat ( Version.getOsgiVersion( "4.5.1-1.redhat-1" ), equalTo( "4.5.1.1-redhat-1" ));
+    }
+
+    @Test
+    public void testGetOsgiVersionFill()
+    {
+        assertThat( Version.getOsgiVersionFill( "1.1" ), equalTo( "1.1.0" ) );
+        assertThat( Version.getOsgiVersionFill( "1.1.redhat-1" ), equalTo( "1.1.0.redhat-1" ) );
+        assertThat( Version.getOsgiVersionFill( "1.1-redhat-1" ), equalTo( "1.1.0.redhat-1" ) );
+        assertThat( Version.getOsgiVersionFill( "1.1Final" ), equalTo( "1.1.0.Final" ) );
+        assertThat( Version.getOsgiVersionFill( "1.1.5CR4" ), equalTo( "1.1.5.CR4" ) );
+        assertThat( Version.getOsgiVersionFill( "1.1." ), equalTo( "1.1.0" ) );
+        assertThat( Version.getOsgiVersionFill( "1.1.CR4" ), equalTo( "1.1.0.CR4" ) );
+        assertThat( Version.getOsgiVersionFill( "1.1-final" ), equalTo( "1.1.0.final" ) );
+        assertThat( Version.getOsgiVersionFill( "1.1.0.final-redhat-1" ), equalTo( "1.1.0.final-redhat-1" ) );
+        assertThat( Version.getOsgiVersionFill( "1.1-2" ),equalTo( "1.1.2" ) );
+        assertThat( Version.getOsgiVersionFill( "1.1-2.Final" ), equalTo( "1.1.2.Final" ) );
+        assertThat( Version.getOsgiVersionFill( "1.1-2-Final" ), equalTo( "1.1.2.Final" ) );
+        assertThat( Version.getOsgiVersionFill( "1.1-2.Final-redhat-2" ), equalTo( "1.1.2.Final-redhat-2" ) );
+        assertThat( Version.getOsgiVersionFill( "1.1-2-Final-redhat-2" ), equalTo( "1.1.2.Final-redhat-2" ) );
     }
 
     @Test
@@ -390,25 +415,24 @@ public class VersionTest
         assertFalse( Version.isValidOSGi("beta1") );
     }
 
-
     @Test
     public void testTimestampedVersion()
     {
-        String v = "1.0.0.t20170216-223844-555-redhat-1";
+        final String v = "1.0.0.t20170216-223844-555-redhat-1";
         assertEquals("1.0.0", Version.getMMM( v ));
         assertEquals("1.0.0", Version.getOsgiMMM( v, false ));
-        assertEquals( Integer.parseInt( "1" ), Version.getIntegerBuildNumber( v ) );
+        assertThat( Version.getIntegerBuildNumber( v ), equalTo( Integer.parseInt( "1" ) ) );
         assertEquals("t20170216-223844-555-redhat-1", Version.getQualifier( v ));
         assertEquals(".t20170216-223844-555-redhat-1", Version.getQualifierWithDelim( v ));
         assertEquals("t20170216-223844-555-redhat", Version.getQualifierBase( v ));
 
-        v = "1.0.t-20170216-223844-555-rebuild-5";
-        assertEquals("1.0", Version.getMMM( v ));
-        assertEquals("1.0.0", Version.getOsgiMMM( v, true ));
-        assertEquals( Integer.parseInt( "5" ), Version.getIntegerBuildNumber( v ) );
-        assertEquals("t-20170216-223844-555-rebuild-5", Version.getQualifier( v ));
-        assertEquals(".t-20170216-223844-555-rebuild-5", Version.getQualifierWithDelim( v ));
-        assertEquals("t-20170216-223844-555-rebuild", Version.getQualifierBase( v ));
+        final String v2 = "1.0.t-20170216-223844-555-rebuild-5";
+        assertEquals("1.0", Version.getMMM(v2));
+        assertEquals("1.0.0", Version.getOsgiMMM(v2, true ));
+        assertThat( Version.getIntegerBuildNumber( v2 ), equalTo( Integer.parseInt( "5" ) ) );
+        assertEquals("t-20170216-223844-555-rebuild-5", Version.getQualifier(v2));
+        assertEquals(".t-20170216-223844-555-rebuild-5", Version.getQualifierWithDelim(v2));
+        assertEquals("t-20170216-223844-555-rebuild", Version.getQualifierBase(v2));
     }
 
     @Test
@@ -416,26 +440,25 @@ public class VersionTest
     {
         Properties p = new Properties();
         VersioningState state = new VersioningState( p );
-        assertEquals( 1, state.getSuffixAlternatives().size() );
-        assertEquals( "redhat", state.getSuffixAlternatives().get( 0 ) );
+        assertThat( state.getSuffixAlternatives(), hasSize( 1 ) );
+        assertThat( state.getSuffixAlternatives(), contains( "redhat" ) );
 
-        p.clear();
         p.setProperty( VersioningState.VERSION_SUFFIX_SYSPROP, "redhat-10" );
-        state = new VersioningState( p );
-        assertEquals( 0, state.getSuffixAlternatives().size() );
-        assertEquals( 1, state.getAllSuffixes().size() );
+        VersioningState state2 = new VersioningState( p );
+        assertThat( state2.getSuffixAlternatives(), empty() );
+        assertThat( state2.getAllSuffixes(), hasSize( 1 ) );
 
         p.clear();
         p.setProperty( VersioningState.VERSION_SUFFIX_SYSPROP, "temporary-redhat-10" );
         p.setProperty( VersioningState.VERSION_SUFFIX_ALT, "redhat-alt" );
-        state = new VersioningState( p );
-        assertEquals( 1, state.getSuffixAlternatives().size() );
-        assertEquals( "redhat-alt", state.getSuffixAlternatives().get( 0 ) );
+        VersioningState state3 = new VersioningState( p );
+        assertThat( state3.getSuffixAlternatives(), hasSize( 1 ) );
+        assertThat( state3.getSuffixAlternatives(), contains( "redhat-alt" ) );
 
         p.clear();
         p.setProperty( VersioningState.VERSION_SUFFIX_SYSPROP, "temporary-redhat-1" );
-        state = new VersioningState( p );
-        assertEquals( 1, state.getSuffixAlternatives().size() );
-        assertEquals( 2, state.getAllSuffixes().size() );
+        VersioningState state4 = new VersioningState( p );
+        assertThat( state4.getSuffixAlternatives(), hasSize( 1 ) );
+        assertThat( state4.getAllSuffixes(), hasSize( 2 ) );
     }
 }

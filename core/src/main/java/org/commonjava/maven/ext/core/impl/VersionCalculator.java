@@ -133,7 +133,6 @@ public class VersionCalculator
                 logger.debug("{} has updated version: {}. Marking for rewrite.", gav( project ), modifiedVersion );
             }
 
-
             if ( !originalVersion.equals( modifiedVersion ) )
             {
                 versionsByGAV.put( project.getKey(), modifiedVersion );
@@ -179,7 +178,6 @@ public class VersionCalculator
         final String staticSuffix = state.getSuffix();
         final String override = state.getOverride();
 
-
         if (logger.isDebugEnabled())
         {
             logger.debug( "Got the following original version: {} for groupId:artifactId {}:{}", version, groupId,
@@ -189,10 +187,9 @@ public class VersionCalculator
             logger.debug( "Got the following version override: {}", override );
         }
 
-
         String newVersion = version;
 
-        if ( state.getSuffixAlternatives().size() > 0 )
+        if ( !state.getSuffixAlternatives().isEmpty() )
         {
             logger.debug( "Got alternate suffixes of {}", state.getSuffixAlternatives() );
             newVersion = handleAlternate( state, version );
@@ -222,13 +219,22 @@ public class VersionCalculator
                 newVersion = Version.setBuildNumber( newVersion, paddedBuildNumber );
             }
         }
+
         if ( !state.isPreserveSnapshot() )
         {
             newVersion = Version.removeSnapshot( newVersion );
         }
+
         if ( state.isOsgi() )
         {
-            newVersion = Version.getOsgiVersion( newVersion );
+            if ( state.isFill() )
+            {
+                newVersion = Version.getOsgiVersionFill( newVersion );
+            }
+            else
+            {
+                newVersion = Version.getOsgiVersion( newVersion );
+            }
         }
 
         return newVersion;

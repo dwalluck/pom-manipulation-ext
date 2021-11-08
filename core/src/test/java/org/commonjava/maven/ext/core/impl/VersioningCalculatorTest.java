@@ -50,24 +50,28 @@ import org.commonjava.maven.galley.spi.transport.Transport;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
 
 public class VersioningCalculatorTest
 {
+    private static final Logger logger = LoggerFactory.getLogger( VersioningCalculatorTest.class );
 
     private static final String GROUP_ID = "group.id";
 
@@ -81,11 +85,46 @@ public class VersioningCalculatorTest
     private ManipulationSession session;
 
     @Test
+    public void testDefault()
+            throws Exception
+    {
+        final Properties props = new Properties();
+
+        setupSession( props );
+
+        final String v = "1";
+        final String result = calculate( v );
+
+        assertThat( result, equalTo( v ) );
+
+    }
+
+    @Test
+    public void testFill()
+            throws Exception
+    {
+        final Properties props = new Properties();
+
+        props.setProperty( VersioningState.VERSION_FILL_SYSPROP, "true" );
+        setupSession( props );
+
+        final String v = "1";
+        final String result = calculate( v );
+
+        assertThat( result, equalTo( v + ".0.0" ) );
+
+        final String v2 = "1.0";
+        final String result2 = calculate( v2 );
+
+        assertThat( result, equalTo( v2 + ".0" ) );
+    }
+
+    @Test
     public void initFailsWithoutSuffixProperty()
         throws Exception
     {
-        final VersioningState session = setupSession( new Properties() );
-        assertThat( session.isEnabled(), equalTo( false ) );
+        final VersioningState state = setupSession( new Properties() );
+        assertThat( state.isEnabled(), equalTo( false ) );
     }
 
     @Test
@@ -104,7 +143,6 @@ public class VersioningCalculatorTest
         assertThat( result, equalTo( v + "-" + s ) );
     }
 
-
     @Test
     public void osgi_fixups()
         throws Exception
@@ -115,7 +153,7 @@ public class VersioningCalculatorTest
         props.setProperty( VersioningState.VERSION_SUFFIX_SYSPROP, s );
         setupSession( props );
 
-        String[][] data = new String[][] {
+        String[][] data = {
             {"1", "1.0.0"},
             {"6.2.0-SNAPSHOT", "6.2.0"},
             {"1.21", "1.21.0"},
@@ -134,7 +172,7 @@ public class VersioningCalculatorTest
             final String result = calculate( v[0] );
 
             // If expected result contains a qualifier append a '-' instead of '.'
-            if ( v[1].contains( "GA" ))
+            if ( v[1].contains( "GA" ) )
             {
                 assertThat( result, equalTo( v[1] + "-" + s ) );
             }
@@ -159,15 +197,16 @@ public class VersioningCalculatorTest
         props.setProperty( VersioningState.VERSION_SUFFIX_SYSPROP, s );
         setupSession( props );
 
-        String[][] data = new String[][] {
+        String[][] data = {
             {"GA-1-GA", "GA-1-GA"},
-            {"1.0.0.0.0-GA", "1.0.0.0-0-GA"}  };
+            {"1.0.0.0.0-GA", "1.0.0.0-0-GA"}
+        };
 
         for ( String[] v : data )
         {
             final String result = calculate( v[0] );
 
-            if ( v[1].contains( "GA" ))
+            if ( v[1].contains( "GA" ) )
             {
                 assertThat( result, equalTo( v[1] + "-" + s ) );
             }
@@ -187,6 +226,7 @@ public class VersioningCalculatorTest
         final String s = "foo";
         props.setProperty( VersioningState.VERSION_SUFFIX_SYSPROP, s );
         props.setProperty( VersioningState.VERSION_OSGI_SYSPROP, "false" );
+        props.setProperty( VersioningState.VERSION_FILL_SYSPROP, "false" );
         setupSession( props );
 
         final String v = "1.2.GA";
@@ -195,6 +235,23 @@ public class VersioningCalculatorTest
         assertThat( result, equalTo( v + "-" + s ) );
     }
 
+    @Test
+    public void applyNonSerialSuffix_NonNumericVersionTail_WithOSGiDisabledFill()
+            throws Exception
+    {
+        final Properties props = new Properties();
+
+        final String s = "foo";
+        props.setProperty( VersioningState.VERSION_SUFFIX_SYSPROP, s );
+        props.setProperty( VersioningState.VERSION_OSGI_SYSPROP, "false" );
+        props.setProperty( VersioningState.VERSION_FILL_SYSPROP, "true" );
+        setupSession( props );
+
+        final String v = "1.2.GA";
+
+        final String result = calculate( v );
+        assertThat( result, equalTo( "1.2.0.GA" + "-" + s ) );
+    }
 
     @Test
     public void idempotency()
@@ -600,7 +657,6 @@ public class VersioningCalculatorTest
         props.setProperty( VersioningState.VERSION_SUFFIX_SYSPROP, suffix );
         setupSession( props );
 
-
         final String result = calculate( origVersion );
         assertThat( result, equalTo( newVersion ) );
     }
@@ -891,7 +947,8 @@ public class VersioningCalculatorTest
         final Map<ProjectVersionRef, String>
                         result = modder.calculateVersioningChanges( Arrays.asList( p1, p2 ), session );
 
-        assertThat( result.get( new SimpleProjectVersionRef( GROUP_ID, ARTIFACT_ID, v + os ) ), equalTo( v + "-" + ns ) );
+        assertThat( result.get( new SimpleProjectVersionRef( GROUP_ID, ARTIFACT_ID, v + os ) ),
+                equalTo( v + "-" + ns ) );
         assertThat( result.get( new SimpleProjectVersionRef( GROUP_ID, a2, v + os ) ), equalTo( v + "-" + ns ) );
     }
 
@@ -919,7 +976,7 @@ public class VersioningCalculatorTest
         final Properties props = new Properties();
 
         props.setProperty( VersioningState.INCREMENT_SERIAL_SUFFIX_SYSPROP, "foo-0" );
-        final Map<ProjectRef, String[]> versionMap = new HashMap<>();
+        final Map<ProjectRef, String[]> versionMap = new HashMap<>( 2 );
 
         versionMap.put( new SimpleProjectRef( p1.getGroupId(), p1.getArtifactId() ), new String[] { "1.2.0.GA-foo-3",
             "1.2.0.GA-foo-2", "1.2.0.GA-foo-9" } );
@@ -931,7 +988,8 @@ public class VersioningCalculatorTest
         final Map<ProjectVersionRef, String>
                         result = modder.calculateVersioningChanges( Arrays.asList( p1, p2 ), session );
 
-        assertThat( result.get( new SimpleProjectVersionRef( GROUP_ID, ARTIFACT_ID, v + os ) ), equalTo( v + "-" + ns ) );
+        assertThat( result.get( new SimpleProjectVersionRef( GROUP_ID, ARTIFACT_ID, v + os ) ),
+                equalTo( v + "-" + ns ) );
         assertThat( result.get( new SimpleProjectVersionRef( GROUP_ID, a2, v + os ) ), equalTo( v + "-" + ns ) );
     }
 
@@ -992,6 +1050,7 @@ public class VersioningCalculatorTest
 
         props.setProperty( VersioningState.VERSION_SUFFIX_SYSPROP, "test-jdk7" );
         props.setProperty( VersioningState.VERSION_OSGI_SYSPROP, "false" );
+        props.setProperty( VersioningState.VERSION_FILL_SYSPROP, "false" );
         setupSession( props );
 
         final String v = "1.1";
@@ -1000,6 +1059,25 @@ public class VersioningCalculatorTest
 
         final String result = calculate( v + os );
         assertThat( result, equalTo( v + ns ) );
+    }
+
+    @Test
+    public void alphaNumericSuffixBaseFill()
+            throws Exception
+    {
+        final Properties props = new Properties();
+
+        props.setProperty( VersioningState.VERSION_SUFFIX_SYSPROP, "test-jdk7" );
+        props.setProperty( VersioningState.VERSION_OSGI_SYSPROP, "false" );
+        props.setProperty( VersioningState.VERSION_FILL_SYSPROP, "true" );
+        setupSession( props );
+
+        final String v = "1.1";
+        final String os = "";
+        final String ns = ".test-jdk7";
+
+        final String result = calculate( v + os );
+        assertThat( result, equalTo( v + ".0" + ns ) );
     }
 
     @Test
@@ -1045,6 +1123,7 @@ public class VersioningCalculatorTest
 
         props.setProperty( VersioningState.VERSION_SUFFIX_SYSPROP, "test_jdk7" );
         props.setProperty( VersioningState.VERSION_OSGI_SYSPROP, "false" );
+        props.setProperty( VersioningState.VERSION_FILL_SYSPROP, "false" );
         props.setProperty( VersioningState.VERSION_SUFFIX_SNAPSHOT_SYSPROP, "true" );
         setupSession( props );
 
@@ -1057,66 +1136,88 @@ public class VersioningCalculatorTest
     }
 
     @Test
+    public void alphaNumericSuffixBaseWithSnapshotFill()
+            throws Exception
+    {
+        final Properties props = new Properties();
+
+        props.setProperty( VersioningState.VERSION_SUFFIX_SYSPROP, "test_jdk7" );
+        props.setProperty( VersioningState.VERSION_OSGI_SYSPROP, "false" );
+        props.setProperty( VersioningState.VERSION_FILL_SYSPROP, "true" );
+        props.setProperty( VersioningState.VERSION_SUFFIX_SNAPSHOT_SYSPROP, "true" );
+        setupSession( props );
+
+        final String v = "1.1-SNAPSHOT";
+        final String os = "";
+        final String ns = ".test_jdk7-SNAPSHOT";
+
+        final String result = calculate( v + os );
+        assertThat( result, equalTo( "1.1.0" + ns ) );
+    }
+
+    @Test
     public void verifyPadding()
                     throws Exception
     {
         final Properties props = new Properties();
         setupSession( props );
 
-        int padding = Version.getBuildNumberPadding( 0, new HashSet<>( Collections.singletonList( "1.2.0.GA-foo-0" ) ) );
-        assertEquals( 1, padding );
+        final int padding = Version.getBuildNumberPadding( 0, Collections.singleton( "1.2.0.GA-foo-0" ) );
+        assertThat( padding, is( 1 ) );
 
-        padding = Version.getBuildNumberPadding( 0, new HashSet<>( Collections.singletonList( "1.2.0.GA-foo-01" ) ) );
-        assertEquals( 2, padding );
+        final int padding2 = Version.getBuildNumberPadding(  0, Collections.singleton( "1.2.0.GA-foo-01" ) );
+        assertThat( padding2, is( 2 ) );
 
-        padding = Version.getBuildNumberPadding( 0, new HashSet<>( Collections.singletonList( "1.2.0.GA-foo-101" ) ) );
-        assertEquals( 3, padding );
+        final int padding3 = Version.getBuildNumberPadding( 0, Collections.singleton( "1.2.0.GA-foo-101" ) );
+        assertThat( padding3, is( 3 ) );
 
-        padding = Version.getBuildNumberPadding( 0, new HashSet<>( Collections.singletonList( "1.2.0.GA-foo-001" ) ) );
-        assertEquals( 3, padding );
+        final int padding4 = Version.getBuildNumberPadding( 0, Collections.singleton( "1.2.0.GA-foo-001" ) );
+        assertThat( padding4, is( 3 ) );
 
-        padding = Version.getBuildNumberPadding( 0, new HashSet<>( Collections.singletonList( "1.2.0.GA-foo-9" ) ) );
-        assertEquals( 1, padding );
+        final int padding5 = Version.getBuildNumberPadding( 0, Collections.singleton( "1.2.0.GA-foo-9" ) );
+        assertThat( padding5, is( 1 ) );
 
-        padding = Version.getBuildNumberPadding( 0, new HashSet<>( Collections.singletonList( "1.0.0.redhat-1" ) ) );
-        assertEquals( 1, padding );
+        final int padding6 = Version.getBuildNumberPadding( 0, Collections.singleton( "1.0.0.redhat-1" ) );
+        assertThat( padding6, is( 1 ) );
 
-        padding = Version.getBuildNumberPadding( 0, new HashSet<>( Collections.singletonList( "1.0.0.Final.rebuild-01912-01" ) ) );
-        assertEquals( 2, padding );
+        final int padding7 = Version.getBuildNumberPadding( 0,
+                Collections.singleton( "1.0.0.Final.rebuild-01912-01" ) );
+        assertThat( padding7, is( 2 ) );
 
-        padding = Version.getBuildNumberPadding( 0, new HashSet<>( Collections.singletonList( "1.0.0.GA.rebuild-010" ) ) );
-        assertEquals( 3, padding );
+        final int padding8 = Version.getBuildNumberPadding( 0, Collections.singleton( "1.0.0.GA.rebuild-010" ) );
+        assertThat( padding8, is( 3 ) );
     }
 
     @Test
     public void verifyPaddingSuffix()
     {
-        String paddedBuildNum = StringUtils.leftPad( "1", 0, '0' );
-        System.out.println ("### got " + paddedBuildNum);
-        assertEquals( "1", paddedBuildNum );
-        paddedBuildNum = StringUtils.leftPad( "1", 1, '0' );
-        System.out.println ("### got " + paddedBuildNum);
-        assertEquals( "1", paddedBuildNum );
+        final String paddedBuildNum = StringUtils.leftPad( "1", 0, '0' );
+        logger.debug( "### got {}", paddedBuildNum );
+        assertThat( paddedBuildNum, is( "1" ) );
 
-        paddedBuildNum = StringUtils.leftPad( "1", 2, '0' );
-        System.out.println ("### got " + paddedBuildNum);
-        assertEquals( "01", paddedBuildNum );
+        final String paddedBuildNum2 = StringUtils.leftPad("1", 1, '0');
+        logger.debug( "### got {}", paddedBuildNum2 );
+        assertThat( paddedBuildNum2, is( "1" ) );
 
-        paddedBuildNum = StringUtils.leftPad( "1", 3, '0' );
-        System.out.println ("### got " + paddedBuildNum);
-        assertEquals( "001", paddedBuildNum );
+        final String paddedBuildNum3 = StringUtils.leftPad("1", 2, '0');
+        logger.debug( "### got {}", paddedBuildNum3 );
+        assertThat( paddedBuildNum3, is( "01" ) );
 
-        paddedBuildNum = StringUtils.leftPad( "10", 3, '0' );
-        System.out.println ("### got " + paddedBuildNum);
-        assertEquals( "010", paddedBuildNum );
+        final String paddedBuildNum4 = StringUtils.leftPad("1", 3, '0');
+        logger.debug( "### got {}", paddedBuildNum4 );
+        assertThat( paddedBuildNum4, is( "001" ) );
 
-        paddedBuildNum = StringUtils.leftPad( "010", 3, '0' );
-        System.out.println ("### got " + paddedBuildNum);
-        assertEquals( "010", paddedBuildNum );
+        final String paddedBuildNum5 = StringUtils.leftPad("10", 3, '0');
+        logger.debug( "### got {}", paddedBuildNum5 );
+        assertThat( paddedBuildNum5, is( "010" ) );
 
-        paddedBuildNum = StringUtils.leftPad( "010", 6, '0' );
-        System.out.println ("### got " + paddedBuildNum);
-        assertEquals( "000010", paddedBuildNum );
+        final String paddedBuildNum6 = StringUtils.leftPad("010", 3, '0');
+        logger.debug( "### got {}", paddedBuildNum6 );
+        assertThat( paddedBuildNum6, is( "010" ) );
+
+        final String paddedBuildNum7 = StringUtils.leftPad("010", 6, '0');
+        logger.debug( "### got {}", paddedBuildNum7 );
+        assertThat( paddedBuildNum7, is( "000010" ) );
     }
 
     @Test
@@ -1145,11 +1246,12 @@ public class VersioningCalculatorTest
         props.setProperty( VersioningState.INCREMENT_SERIAL_SUFFIX_SYSPROP, "foo" );
         setupSession( props, "1.2.0.GA-foo-003", "1.2.0.GA-foo-002", "1.2.0.GA-foo-009" );
 
-        System.out.println ("### Calculating versioning changes for projects " + p1 + " and " + p2);
+        logger.debug( "### Calculating versioning changes for projects {} and {}", p1, p2 );
         final Map<ProjectVersionRef, String>
                         result = modder.calculateVersioningChanges( Arrays.asList( p1, p2 ), session );
 
-        assertThat( result.get( new SimpleProjectVersionRef( GROUP_ID, ARTIFACT_ID, v + os ) ), equalTo( v + "-" + ns ) );
+        assertThat( result.get( new SimpleProjectVersionRef( GROUP_ID, ARTIFACT_ID, v + os ) ),
+                equalTo( v + "-" + ns ) );
         assertThat( result.get( new SimpleProjectVersionRef( GROUP_ID, a2, v + os ) ), equalTo( v + "-" + ns ) );
     }
 
@@ -1161,22 +1263,23 @@ public class VersioningCalculatorTest
         props.setProperty( VersioningState.INCREMENT_SERIAL_SUFFIX_PADDING_SYSPROP, "5" );
         props.setProperty( VersioningState.VERSION_SUFFIX_ALT, "redhat" );
 
-        VersioningState vState = new VersioningState( props );
+        final VersioningState vState = new VersioningState( props );
 
-        assertEquals( "1.0.0.temporary-redhat-1", VersionCalculator.handleAlternate( vState, "1.0.0.temporary-redhat-1" ) );
-        assertEquals( "1.0.0", VersionCalculator.handleAlternate( vState, "1.0.0" ) );
-        assertEquals( "1.0.0", VersionCalculator.handleAlternate( vState, "1.0.0.redhat-10" ) );
+        assertThat( VersionCalculator.handleAlternate( vState, "1.0.0.temporary-redhat-1" ),
+                is( "1.0.0.temporary-redhat-1" ) );
+        assertThat( VersionCalculator.handleAlternate( vState, "1.0.0" ), is( "1.0.0" ) ) ;
+        assertThat( VersionCalculator.handleAlternate( vState, "1.0.0.redhat-10" ) , is( "1.0.0" ) );
 
         props.setProperty( VersioningState.INCREMENT_SERIAL_SUFFIX_SYSPROP, "redhat" );
         props.remove( VersioningState.VERSION_SUFFIX_ALT );
-        vState = new VersioningState( props );
+        final VersioningState vState2 = new VersioningState( props );
 
-        assertEquals( "1.0.0.temporary-redhat-1", VersionCalculator.handleAlternate( vState, "1.0.0.temporary-redhat-1" ) );
-        assertEquals( "1.0.0", VersionCalculator.handleAlternate( vState, "1.0.0" ) );
-        assertEquals( "1.0.0.redhat-10", VersionCalculator.handleAlternate( vState, "1.0.0.redhat-10" ) );
+        assertThat( VersionCalculator.handleAlternate ( vState2, "1.0.0.temporary-redhat-1" ),
+                is( "1.0.0.temporary-redhat-1" ) );
+        assertThat( VersionCalculator.handleAlternate( vState2, "1.0.0" ), is( "1.0.0"  ) ) ;
+        assertThat( VersionCalculator.handleAlternate( vState2, "1.0.0.redhat-10" ), is( "1.0.0.redhat-10" ) );
 
     }
-
 
     @Test
     public void incrementExistingSuffixWithTemporary()
@@ -1210,17 +1313,15 @@ public class VersioningCalculatorTest
         final String newVersion = "1.2.0.rebuild-2";
 
         final ProjectVersionRef projectVersionRef = SimpleProjectVersionRef.parse( "org.jboss:bar:" + origVersion );
-        final Map<ProjectRef, Set<String>> metadata = new HashMap<>();
-        final Set<String> candidates = new HashSet<>();
-        candidates.add( candidateVersion );
-        metadata.put( projectVersionRef.asProjectRef(), candidates );
+        final Set<String> candidates = Collections.singleton( candidateVersion );
+        final Map<ProjectRef, Set<String>> metadata = Collections.singletonMap( projectVersionRef.asProjectRef(),
+                candidates );
         state.setRESTMetadata( metadata );
 
-        VersionCalculator vc = new VersionCalculator( null );
-
+        final VersionCalculator vc = new VersionCalculator( null );
         final String result = vc.calculate( "org.jboss", "bar", origVersion, state );
-        System.out.println(state);
-        assertThat(result,  equalTo( newVersion ) );
+        logger.debug( "State is {}", state );
+        assertThat( result,  equalTo( newVersion ) );
     }
 
     @Test
@@ -1234,24 +1335,28 @@ public class VersioningCalculatorTest
         final String origVersion = "1.2.0";
         final String newVersion = "1.2.0.rebuild-1";
 
-        VersionCalculator vc = new VersionCalculator( null );
+        final VersionCalculator vc = new VersionCalculator( null );
 
         final String result = vc.calculate( "org.jboss", "bar", origVersion, state );
-        System.out.println(state);
-        assertThat(result,  equalTo( newVersion ) );
+        logger.debug( "State is {}", state );
+        assertThat( result,  equalTo( newVersion ) );
     }
 
-
-    private byte[] setupMetadataVersions( final String... versions )
-        throws IOException
-    {
+    private static byte[] setupMetadataVersions( final String... versions ) {
         final Metadata md = new Metadata();
         final Versioning v = new Versioning();
         md.setVersioning( v );
         v.setVersions( Arrays.asList( versions ) );
 
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        new MetadataXpp3Writer().write( baos, md );
+        try
+        {
+            new MetadataXpp3Writer().write( baos, md );
+        }
+        catch ( IOException e )
+        {
+            throw new UncheckedIOException( e );
+        }
 
         return baos.toByteArray();
     }
@@ -1265,7 +1370,8 @@ public class VersioningCalculatorTest
     private VersioningState setupSession( final Properties properties, final String... versions )
         throws Exception
     {
-        return setupSession( properties, Collections.singletonMap( new SimpleProjectRef( GROUP_ID, ARTIFACT_ID ), versions ) );
+        return setupSession( properties,
+                Collections.singletonMap( new SimpleProjectRef( GROUP_ID, ARTIFACT_ID ), versions ) );
     }
 
     @SuppressWarnings( "deprecation" )
@@ -1274,7 +1380,7 @@ public class VersioningCalculatorTest
     {
         // Originally the default used to be 0, this was changed to be 5 but this affects this test suite so revert
         // just for these tests.
-        if ( ! properties.containsKey( VersioningState.INCREMENT_SERIAL_SUFFIX_PADDING_SYSPROP ) )
+        if ( !properties.containsKey( VersioningState.INCREMENT_SERIAL_SUFFIX_PADDING_SYSPROP ) )
         {
             properties.setProperty( VersioningState.INCREMENT_SERIAL_SUFFIX_PADDING_SYSPROP, "0" );
         }
@@ -1297,17 +1403,9 @@ public class VersioningCalculatorTest
         final VersioningState state = new VersioningState( properties );
         session.setState( state );
 
-        final Map<String, byte[]> dataMap = new HashMap<>();
-        if ( versionMap != null && !versionMap.isEmpty() )
-        {
-            for ( final Map.Entry<ProjectRef, String[]> entry : versionMap.entrySet() )
-            {
-                final String path = toMetadataPath( entry.getKey() );
-                final byte[] data = setupMetadataVersions( entry.getValue() );
-                dataMap.put( path, data );
-            }
-        }
-
+        final Map<String, byte[]> dataMap = versionMap.entrySet().stream()
+                .collect( Collectors.toMap( entry -> toMetadataPath( entry.getKey() ),
+                        entry -> setupMetadataVersions( entry.getValue() ) ) );
         final Location mdLoc = MavenLocationExpander.EXPANSION_TARGET;
         final Transport mdTrans = new StubTransport( dataMap );
 
@@ -1317,7 +1415,7 @@ public class VersioningCalculatorTest
         return state;
     }
 
-    private String toMetadataPath( final ProjectRef key )
+    private static String toMetadataPath( final ProjectRef key )
     {
         return String.format( "%s/%s/maven-metadata.xml", key.getGroupId()
                                                              .replace( '.', '/' ), key.getArtifactId() );
@@ -1331,18 +1429,17 @@ public class VersioningCalculatorTest
                                final File cacheDir )
             throws ManipulationException
         {
-            super( new GalleyAPIWrapper( new GalleyInfrastructure( session, new DefaultMirrorSelector()).init(mdLoc,
+            super( new GalleyAPIWrapper( new GalleyInfrastructure( session, new DefaultMirrorSelector() ).init( mdLoc,
                                                                    mdTrans, cacheDir ) ) );
         }
 
         @Override
         public String calculate( final String groupId, final String artifactId,
-                                             final String originalVersion, final ManipulationSession session )
+                                             final String version, final ManipulationSession session )
             throws ManipulationException
         {
-            return super.calculate( groupId, artifactId, originalVersion, session );
+            return super.calculate( groupId, artifactId, version, session );
         }
 
     }
-
 }
